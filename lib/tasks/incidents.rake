@@ -16,7 +16,7 @@ namespace :incidents do
       locale = i.css('a').first.content.match(/([^,]+), (.+)/)
       geosafe_locale = i.css('a').first.content.gsub(/\bCO\./, "COUNTY")
       info = i.at_xpath('text()').content.match(/(?:, )?(\d{1,2}\/\d{1,2}\/\d{2,4}): (.*)/)
-      time_of_day = info[2].match(/(\d{1,2})(?::?(\d{2}))? ([ap]\.m\.)/)
+      time_of_day = info[2].match(/(\d{1,2})(?::?(\d{2}))? ([ap]\.?m\.?)/)
       geolocation = geolocate(geosafe_locale)
       occurred_at = Time.strptime(info[1], info[1] =~ /\/\d{2}$/ ? "%m/%d/%y" : "%m/%d/%Y").
         in_time_zone(geolocation[:timezone].timezone_id).at_midnight +

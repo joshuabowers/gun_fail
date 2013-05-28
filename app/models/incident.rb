@@ -5,7 +5,7 @@ class Incident
   field :city, type: String
   field :state, type: String
   field :coordinates, type: Array
-  field :occurred_at, type: Time
+  field :occurred_at, type: ActiveSupport::TimeWithZone
   field :description, type: String
   
   index({coordinates: "2d"})
