@@ -1,0 +1,13 @@
+= simple_form_for(@incident) do |f|
+  = f.error_notification
+
+  .form-inputs
+    = f.input :street
+    = f.input :city
+    = f.input :state
+    = f.input :coordinates
+    = f.input :occurred_at
+    = f.input :description
+
+  .form-actions
+    = f.button :submit

@@ -1,0 +1,24 @@
+%p#notice= notice
+
+%p
+  %b Street:
+  = @incident.street
+%p
+  %b City:
+  = @incident.city
+%p
+  %b State:
+  = @incident.state
+%p
+  %b Coordinates:
+  = @incident.coordinates
+%p
+  %b Occurred at:
+  = @incident.occurred_at
+%p
+  %b Description:
+  = @incident.description
+
+= link_to 'Edit', edit_incident_path(@incident)
+\|
+= link_to 'Back', incidents_path
