@@ -32,6 +32,8 @@ gem 'nokogiri'
 gem 'will_paginate'
 gem 'simple_form', '~> 2.1.0'
 
+gem 'geonames'
+
 group :test, :development do
   gem 'rspec-rails', '~> 2.13.2'
   gem 'fabrication'
