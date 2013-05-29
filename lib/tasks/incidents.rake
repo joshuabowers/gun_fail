@@ -13,13 +13,11 @@ namespace :incidents do
   task :fetch_latest => :environment do
     doc = Nokogiri::HTML(open('http://www.dailykos.com/story/2013/05/24/1210114/-GunFAIL-XIX'))
     doc.css('#body li').each do |i|
-      locale = i.css('a').first.content.match(/([^,]+), (.+)/)
-      geosafe_locale = i.css('a').first.content.gsub(/\bCO\./, "COUNTY")
+      geolocation = Location.geolocate(i.css('a').first.content)
       info = i.at_xpath('text()').content.match(/(?:, )?(\d{1,2}\/\d{1,2}\/\d{2,4}): (.*)/)
       time_of_day = info[2].match(/(\d{1,2})(?::?(\d{2}))? ([ap]\.?m\.?)/)
-      geolocation = geolocate(geosafe_locale)
       occurred_at = Time.strptime(info[1], info[1] =~ /\/\d{2}$/ ? "%m/%d/%y" : "%m/%d/%Y").
-        in_time_zone(geolocation[:timezone].timezone_id).at_midnight +
+        in_time_zone(geolocation.timezone).at_midnight +
         (time_of_day.blank? ? 0.hours : (
           (time_of_day[3] == "p.m." ? 12.hours : 0.hours) +
           (time_of_day[1].present? ? time_of_day[1].to_i.hours : 0.hours) +
@@ -27,25 +25,12 @@ namespace :incidents do
         ))
       incident = Incident.create(
         source_url: i.css('a').first['href'],
-        city: locale[1],
-        state: locale[2],
-        coordinates: [geolocation[:longitude], geolocation[:latitude]],
+        city: geolocation.city,
+        state: geolocation.state,
+        coordinates: geolocation.coordinates,
         occurred_at: occurred_at,
         description: info[2]
       )
     end
   end
-  
-  def geolocate(placename)
-    postal_codes = Geonames::WebService.find_nearby_postal_codes( Geonames::PostalCodeSearchCriteria.new.tap do |criteria|
-      criteria.place_name = placename
-      criteria.country_code = "US"
-    end)
-    {
-      latitude: postal_codes.first.latitude,
-      longitude: postal_codes.first.longitude,
-      timezone: Geonames::WebService.timezone(postal_codes.first.latitude, postal_codes.first.longitude) 
-    }
-  end
-
 end
