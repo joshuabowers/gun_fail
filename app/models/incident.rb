@@ -9,4 +9,11 @@ class Incident
   field :description, type: String
   
   index({coordinates: "2d"})
+  
+  EARTH_RADIUS = 6371.0
+  
+  # Distances measured in Km
+  def self.within_distance(loc, distance)
+    geo_near(loc).distance_multiplier(EARTH_RADIUS).spherical.max_distance(distance / EARTH_RADIUS)
+  end
 end
