@@ -1,6 +1,10 @@
+require 'open-uri'
+
 class Incident
   include Mongoid::Document
   field :source_url, type: String
+  field :daily_kos_url, type: String
+  field :gun_fail_series, type: String
   field :street, type: String
   field :city, type: String
   field :state, type: String

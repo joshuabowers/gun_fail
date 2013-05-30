@@ -5,6 +5,9 @@ class Location
   field :coordinates, type: Array
   field :timezone, type: String
   
+  class_attribute :accessed_webservice
+  self.accessed_webservice = false
+  
   def self.geolocate(placename)
     sanitized = sanitize_placename(placename)
     locale = sanitized.split(/, ?/)
@@ -14,6 +17,7 @@ class Location
         criteria.place_name = sanitized
         criteria.country_code = "US"
       end)
+      self.accessed_webservice = true
       create(
         city: locale[0],
         state: locale[1],
@@ -25,7 +29,13 @@ class Location
     end
   end
   
+  # Geonames has problems with some of the abbreviations used in the GunFail series. This makes sure it can
+  # properly handle the place names.
   def self.sanitize_placename(placename)
-    placename.gsub(/\bCO\./i, "COUNTY")
+    {
+      /\bCO\./i => "COUNTY",
+      /\bBORO\b/i => "BOROUGH",
+      /^MOUNTAIN HOME, AK$/i => "MOUNTAIN VILLAGE, AK"
+    }.inject(placename) {|memo, pair| memo.gsub(pair[0], pair[1])}
   end
 end

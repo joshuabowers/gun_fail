@@ -34,6 +34,10 @@ gem 'simple_form', '~> 2.1.0'
 
 gem 'geonames'
 
+gem 'roman-numerals'
+
+gem 'ruby-progressbar'
+
 group :test, :development do
   gem 'rspec-rails', '~> 2.13.2'
   gem 'fabrication'
