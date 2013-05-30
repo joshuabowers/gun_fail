@@ -1,5 +1,3 @@
-require 'open-uri'
-
 class Incident
   include Mongoid::Document
   field :source_url, type: String
