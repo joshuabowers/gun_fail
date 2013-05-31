@@ -29,7 +29,7 @@ gem 'underscore-rails'
 
 gem 'nokogiri'
 
-gem 'will_paginate'
+gem 'kaminari'
 gem 'simple_form', '~> 2.1.0'
 
 gem 'geonames'

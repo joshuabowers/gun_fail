@@ -1,5 +1,8 @@
 %h1 Listing incidents
 
+%aside
+  = page_entries_info @incidents
+  = paginate @incidents
 %table
   %tr
     %th Street
@@ -18,7 +21,7 @@
       %td= incident.city
       %td= incident.state
       %td= incident.coordinates
-      %td= incident.occurred_at
+      %td= incident.occurred_at.in_time_zone(Location.where(city: incident.city, state: incident.state).first.timezone)
       %td= incident.description
       %td= link_to 'Show', incident
       %td= link_to 'Edit', edit_incident_path(incident)
