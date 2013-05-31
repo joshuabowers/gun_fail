@@ -7,5 +7,8 @@
     = javascript_include_tag "application"
     = javascript_include_tag "https://maps.googleapis.com/maps/api/js?key=AIzaSyAgEELz3vAGza6kB16dBbvDkq_nhYh0EKE&sensor=false"
     = csrf_meta_tags
+    = tag :meta, name: "context", content: controller.controller_name
+    = yield :page_metadata
   %body
-    = yield
+    #content
+      = yield
