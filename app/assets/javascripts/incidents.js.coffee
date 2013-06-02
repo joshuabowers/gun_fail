@@ -28,6 +28,7 @@ $ ->
     google.maps.event.addListener map, 'idle', ->
       if map.getBounds()
         sent_data = {bounds: map.getBounds().toUrlValue()}
+        $("#debug-info").html("Zoom Level: #{map.getZoom()}")
         $.getJSON $("meta[name='incidents_path']").attr("content"), sent_data, (incidents) ->
           touched_marker_ids = []
           for incident in incidents

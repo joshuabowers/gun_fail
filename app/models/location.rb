@@ -5,6 +5,12 @@ class Location
   field :coordinates, type: Array
   field :timezone, type: String
   
+  index({coordinates: "2d"})
+  
+  def incidents
+    Incident.where(city: self.city, state: self.state)
+  end
+  
   class_attribute :accessed_webservice
   self.accessed_webservice = false
   

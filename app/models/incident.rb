@@ -20,4 +20,8 @@ class Incident
   end
   
   scope :within_bounds, lambda {|bounds| bounds.blank? ? criteria : within_box(coordinates: bounds.split(',').map(&:to_f).each_slice(2).map(&:reverse))}
+  
+  def self.bounded_by(bounds)
+    Location.within_box(coordinates: bounds.split(',').map(&:to_f).each_slice(2).map(&:reverse))
+  end
 end
