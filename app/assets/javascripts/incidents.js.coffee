@@ -11,6 +11,7 @@ $ ->
       mapTypeId: google.maps.MapTypeId.ROADMAP
       })
     visible_markers = {}
+    info_windows = {}
       
     if navigator.geolocation
       navigator.geolocation.getCurrentPosition (position) ->
@@ -22,8 +23,17 @@ $ ->
       for field in ["city", "state", "occurred_at", "description"]
         info_window_content.find(".#{field}").html(incident[field])
       info_window = new google.maps.InfoWindow {content: info_window_content.html()}
+      info_windows[incident._id] = false
       google.maps.event.addListener marker, 'click', ->
-        info_window.open(map, marker)
+        info_windows[incident._id] = !info_windows[incident._id]
+        unless info_windows[incident._id]
+          info_window.close()
+        else
+          info_window.open(map, marker)
+      google.maps.event.addListener map, 'click', ->
+        info_windows[incident._id] = false
+        info_window.close()
+          
         
     google.maps.event.addListener map, 'idle', ->
       if map.getBounds()
