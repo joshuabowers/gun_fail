@@ -18,4 +18,6 @@ class Incident
   def self.within_distance(loc, distance)
     geo_near(loc).distance_multiplier(EARTH_RADIUS).spherical.max_distance(distance / EARTH_RADIUS)
   end
+  
+  scope :within_bounds, lambda {|bounds| bounds.blank? ? criteria : within_box(coordinates: bounds.split(',').map(&:to_f).each_slice(2).map(&:reverse))}
 end

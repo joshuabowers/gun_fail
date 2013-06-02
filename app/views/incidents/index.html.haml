@@ -1,3 +1,12 @@
+- meta_tag(:incidents_path, incidents_path(format: :json))
+.info-window.template
+  .incident.window
+    = succeed ", " do
+      %span.city
+    = succeed ": " do
+      %span.state
+    %span.occurred_at
+    .description
 #map-canvas
 
 -# %h1 Listing incidents
