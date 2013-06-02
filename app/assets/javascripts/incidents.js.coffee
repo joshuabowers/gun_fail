@@ -10,6 +10,7 @@ $ ->
       zoom: 8,
       mapTypeId: google.maps.MapTypeId.ROADMAP
       })
+    visible_markers = {}
       
     if navigator.geolocation
       navigator.geolocation.getCurrentPosition (position) ->
@@ -29,11 +30,19 @@ $ ->
       if map.getBounds()
         sent_data = {bounds: map.getBounds().toUrlValue()}
         $.getJSON $("meta[name='incidents_path']").attr("content"), sent_data, (incidents) ->
+          touched_marker_ids = []
           for incident in incidents
-            marker = new google.maps.Marker {
-              position: new google.maps.LatLng(incident.coordinates.reverse()...),
-              map: map,
-              title: "#{incident.city}, #{incident.state}: #{incident.description.slice(0, 15)}..."
-            }
-            create_info_window incident, marker
+            touched_marker_ids.push(incident._id)
+            unless visible_markers[incident._id]
+              marker = new google.maps.Marker {
+                position: new google.maps.LatLng(incident.coordinates.reverse()...),
+                map: map,
+                title: "#{incident.city}, #{incident.state}: #{incident.description.slice(0, 15)}..."
+              }
+              create_info_window incident, marker
+              visible_markers[incident._id] = marker
+          stale_markers = _.chain(visible_markers).keys().difference(touched_marker_ids).value()
+          for stale_marker in stale_markers
+            visible_markers[stale_marker].setMap(null)
+            delete visible_markers[stale_marker]
       
