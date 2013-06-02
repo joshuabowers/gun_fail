@@ -21,10 +21,9 @@ $ ->
       info_window_content = $('.info-window.template').clone().removeClass('template')
       for field in ["city", "state", "occurred_at", "description"]
         info_window_content.find(".#{field}").html(incident[field])
-      info_window = new google.maps.InfoWindow
+      info_window = new google.maps.InfoWindow {content: info_window_content.html()}
       google.maps.event.addListener marker, 'click', ->
-        info_window.setContent(info_window_content.html())
-        info_window.open(map, marker)      
+        info_window.open(map, marker)
         
     google.maps.event.addListener map, 'idle', ->
       if map.getBounds()
