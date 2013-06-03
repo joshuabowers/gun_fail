@@ -18,6 +18,7 @@ class Location
   scope :township, lambda { where(type: "administrative_area_level_3") }
   scope :county, lambda { where(type: "administrative_area_level_2") }
   scope :state, lambda { where(type: "administrative_area_level_1") }
+  scope :short_or_long_name, lambda {|name| criteria.or({short_name: /^#{name}$/i}, {long_name: /^#{name}$/i})}
   
   class_attribute :valid_types
   self.valid_types = %w[locality administrative_area_level_3 administrative_area_level_2 administrative_area_level_1 country]
@@ -32,10 +33,18 @@ class Location
     Incidents.within_box("geo_point.coordinates" => self.boundary.as_queryable)
   end
   
-  # Bug: formatted_address does not follow from what geocode is producing; need to cache the sanitized search name...
   def self.geolocate(placename)
     sanitized = sanitize_placename(placename)
-    where(search_query: /^#{Regexp.escape(sanitized)}/i).first || geocode(sanitized)
+    reverse_location_search(sanitized) || geocode(sanitized)
+  end
+  
+  def self.reverse_location_search(placename)
+    names = placename.gsub(/county|state\b/i, '').split(/, ?/).map(&:strip).reverse
+    location = self.short_or_long_name(names.shift).first
+    until names.blank? || location.blank?
+      location = self.short_or_long_name(names.shift).within_box("geo_point.coordinates" => location.boundary.as_queryable).first
+    end
+    location
   end
   
   def self.geocode(placename, administrative_area = nil)
@@ -62,7 +71,8 @@ class Location
           sleep 1.second
           geolocate(placename)
         end
-      end.save!
+        location.save!
+      end
     else
       raise "Geocoding on \"#{placename}\" failed: #{response['status']}"
     end
