@@ -3,14 +3,14 @@ class Incident
   field :source_url, type: String
   field :daily_kos_url, type: String
   field :gun_fail_series, type: String
-  field :street, type: String
   field :city, type: String
   field :state, type: String
-  field :coordinates, type: Array
   field :occurred_at, type: ActiveSupport::TimeWithZone
   field :description, type: String
   
-  index({coordinates: "2d"})
+  embeds_one :geo_point
+  
+  index({"geo_point.coordinates" => "2d"})
   
   EARTH_RADIUS = 6371.0
   
