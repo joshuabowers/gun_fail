@@ -5,6 +5,7 @@ class Location
   field :long_name, type: String
   field :short_name, type: String
   field :formatted_address, type: String
+  field :search_query, type: String
   field :type, type: String
   field :timezone, type: String
   
@@ -19,40 +20,46 @@ class Location
   scope :state, lambda { where(type: "administrative_area_level_1") }
   
   class_attribute :valid_types
-  self.valid_types = %w[sublocality locality administrative_area_level_3 administrative_area_level_2 administrative_area_level_1 country]
+  self.valid_types = %w[locality administrative_area_level_3 administrative_area_level_2 administrative_area_level_1 country]
+  
+  class_attribute :geocode_hints
+  self.geocode_hints = {"administrative_area_level_2" => " county", "administrative_area_level_1" => " state"}
+  
+  class_attribute :accessed_webservice
+  self.accessed_webservice = 0
   
   def incidents
     Incidents.within_box("geo_point.coordinates" => self.boundary.as_queryable)
   end
   
+  # Bug: formatted_address does not follow from what geocode is producing; need to cache the sanitized search name...
   def self.geolocate(placename)
     sanitized = sanitize_placename(placename)
-    where(formatted_address: /^#{Regexp.escape(sanitized)}$/i).first || geocode(placename)
+    where(search_query: /^#{Regexp.escape(sanitized)}/i).first || geocode(sanitized)
   end
   
   def self.geocode(placename, administrative_area = nil)
     response = lookup_placename(placename, administrative_area)
     if response['status'] == "OK"
-      response_type = (response['results'][0]['types'] & self.valid_types).first
-      address_components = response['results'][0]['address_components']
+      self.accessed_webservice += 1
+      result = response['results'].select {|r| (r['types'] & self.valid_types).present?}.first
+      response_type = (result['types'] & self.valid_types).first
+      address_components = result['address_components'].select {|c| (self.valid_types & c['types']).present?}
       names = address_components.select {|c| c['types'].member?(response_type)}.first
       new(
         long_name: names['long_name'],
         short_name: names['short_name'],
-        formatted_address: response['results'][0]['formatted_address'],
+        formatted_address: result['formatted_address'],
+        search_query: placename,
         type: response_type
       ).tap do |location|
-        geometry = response['results'][0]['geometry']
+        geometry = result['geometry']
         location.build_geo_point(geometry['location'])
         location.build_boundary(geometry['bounds'])
-        # Need to restructure this; some locations will not have all administrative levels. (E.g. CA does not 
-        # seem to have administrative_area_level_3's.) Need to loop over valid_types until an appropriate starting
-        # point is found.
-        next_type = self.valid_types[self.valid_types.index(response_type)+1]
-        unless next_type.blank?
-          next_index = address_components.index {|c| c['types'].member?(next_type)}
-          puts next_type, next_index, address_components.length
-          placename = address_components[next_index, address_components.length].map {|c| c['long_name'] + (c['types'].member?('administrative_area_level_2') ? " County" : "")}.join(', ')
+        applicable_types = self.valid_types & address_components.map {|c| c['types']}.flatten - [response_type, 'administrative_area_level_3']
+        unless applicable_types.blank?
+          placename = address_components.select {|c| (c['types'] & applicable_types).present?}.map {|c| c['long_name'] + self.geocode_hints[(c['types'] & self.valid_types).first].to_s}.join(', ')
+          sleep 1.second
           geolocate(placename)
         end
       end.save!
@@ -74,7 +81,7 @@ class Location
       /\bCO\./i => "COUNTY",
       /\bBORO\b/i => "BOROUGH",
       /^MOUNTAIN HOME, AK$/i => "MOUNTAIN VILLAGE, AK"
-    }.inject(placename) {|memo, pair| memo.gsub(pair[0], pair[1])} + ", USA"
+    }.inject(placename) {|memo, pair| memo.gsub(pair[0], pair[1])}
   end
   
   
