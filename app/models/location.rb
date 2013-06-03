@@ -5,14 +5,14 @@ class Location
   field :long_name, type: String
   field :short_name, type: String
   field :formatted_address, type: String
-  field :search_query, type: String
   field :type, type: String
   field :timezone, type: String
   
   embeds_one :geo_point
   embeds_one :boundary
   
-  index({"geo_point.coordinates" => "2d"})
+  # index({"geo_point.coordinates" => "2d"})
+  index("geo_point" => "2dsphere")
   
   scope :city, lambda { where(type: "locality") }
   scope :township, lambda { where(type: "administrative_area_level_3") }
@@ -21,7 +21,7 @@ class Location
   scope :short_or_long_name, lambda {|name| criteria.or({short_name: /^#{name}$/i}, {long_name: /^#{name}$/i})}
   
   class_attribute :valid_types
-  self.valid_types = %w[locality administrative_area_level_3 administrative_area_level_2 administrative_area_level_1 country]
+  self.valid_types = %w[locality administrative_area_level_3 administrative_area_level_2 administrative_area_level_1]
   
   class_attribute :geocode_hints
   self.geocode_hints = {"administrative_area_level_2" => " county", "administrative_area_level_1" => " state"}
@@ -59,7 +59,6 @@ class Location
         long_name: names['long_name'],
         short_name: names['short_name'],
         formatted_address: result['formatted_address'],
-        search_query: placename,
         type: response_type
       ).tap do |location|
         geometry = result['geometry']

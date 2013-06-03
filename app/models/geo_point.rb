@@ -1,5 +1,6 @@
 class GeoPoint
   include Mongoid::Document
+  field :type, type: String, default: "Point"
   field :coordinates, type: Array, default: []
   embedded_in :locatable
   

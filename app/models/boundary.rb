@@ -7,4 +7,8 @@ class Boundary
   def as_queryable
     [self.northeast.coordinates, self.southwest.coordinates]
   end
+  
+  def as_geo_polygon
+    [self.northeast.coordinates, [self.northeast.lng, self.southwest.lat], self.southwest.coordinates, [self.southwest.lng, self.northeast.lat]]
+  end
 end
