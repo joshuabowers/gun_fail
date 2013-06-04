@@ -11,8 +11,8 @@ class Location
   embeds_one :geo_point
   embeds_one :boundary
   
-  # index({"geo_point.coordinates" => "2d"})
-  index("geo_point" => "2dsphere")
+  index({"geo_point.coordinates" => "2d"})
+  # index("geo_point" => "2dsphere")
   
   scope :city, lambda { where(type: "locality") }
   scope :township, lambda { where(type: "administrative_area_level_3") }
@@ -29,8 +29,22 @@ class Location
   class_attribute :accessed_webservice
   self.accessed_webservice = 0
   
-  def incidents
-    Incidents.within_box("geo_point.coordinates" => self.boundary.as_queryable)
+  def incidents(incident_criteria = nil)
+    criteria_within_boundary(criteria: incident_criteria, class: Incident)
+  end
+  
+  def sublocations(location_criteria = nil)
+    criteria_within_boundary(criteria: location_criteria)
+  end
+  
+  def criteria_within_boundary(options = {})
+    c = options[:criteria] || options[:class].criteria || self.class.criteria
+    Enumerator.new do |y|
+      boundaries = self.boundary.crosses_anti_meridian? ? self.boundary.as_queryable : [self.boundary.as_queryable]
+      boundaries.each do |sub_boundary|
+        c.within_box('geo_point.coordinates' => sub_boundary).each {|l| y << l}
+      end
+    end
   end
   
   def self.geolocate(placename)
@@ -42,7 +56,7 @@ class Location
     names = placename.gsub(/county|state\b/i, '').split(/, ?/).map(&:strip).reverse
     location = self.short_or_long_name(names.shift).first
     until names.blank? || location.blank?
-      location = self.short_or_long_name(names.shift).within_box("geo_point.coordinates" => location.boundary.as_queryable).first
+      location = location.sublocations(self.short_or_long_name(names.shift)).first
     end
     location
   end
