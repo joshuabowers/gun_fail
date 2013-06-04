@@ -94,6 +94,7 @@ class Location
         geometry = result['geometry']
         location.build_geo_point(geometry['location'])
         location.build_boundary(geometry['bounds'])
+        location.timezone = location.retrieve_timezone unless location.type == "country"
         applicable_types = self.valid_types & address_components.map {|c| c['types']}.flatten - [response_type, 'administrative_area_level_3']
         unless applicable_types.blank?
           placename = address_components.select {|c| (c['types'] & applicable_types).present?}.map do |c| 
@@ -115,6 +116,17 @@ class Location
       map {|key, value| "#{key}=#{value}"}.join("&")
     uri = URI.encode("https://maps.googleapis.com/maps/api/geocode/json?#{parameters}")
     JSON.parse(open(uri).read)
+  end
+  
+  def retrieve_timezone()
+    parameters = { location: self.geo_point.as_mappable.join(','), sensor: false, timestamp: Time.now.to_i }.map {|k,v| "#{k}=#{v}"}.join("&")
+    uri = URI.encode("https://maps.googleapis.com/maps/api/timezone/json?#{parameters}")
+    response = JSON.parse(open(uri).read)
+    if response['status'] == "OK"
+      response['timeZoneId']
+    else
+      raise "Failed ot acquire timezome for location \"#{self.long_name}\": status: \"#{response['status']}\""
+    end
   end
   
   def self.sanitize_placename(placename)
