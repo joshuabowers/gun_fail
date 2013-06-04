@@ -14,21 +14,30 @@ class Location
   index({"geo_point.coordinates" => "2d"})
   # index("geo_point" => "2dsphere")
   
-  scope :city, lambda { where(type: "locality") }
-  scope :township, lambda { where(type: "administrative_area_level_3") }
-  scope :county, lambda { where(type: "administrative_area_level_2") }
-  scope :state, lambda { where(type: "administrative_area_level_1") }
-  scope :short_or_long_name, lambda {|name| criteria.or({short_name: /^#{name}$/i}, {long_name: /^#{name}$/i})}
-  
   class_attribute :valid_types
-  self.valid_types = %w[locality administrative_area_level_3 administrative_area_level_2 administrative_area_level_1]
+  self.valid_types = %w[locality administrative_area_level_3 administrative_area_level_2 administrative_area_level_1 country]
   
   class_attribute :geocode_hints
-  self.geocode_hints = {"administrative_area_level_2" => " county", "administrative_area_level_1" => " state"}
+  self.geocode_hints = {"administrative_area_level_2" => "county", "administrative_area_level_1" => "state"}
   
   class_attribute :accessed_webservice
   self.accessed_webservice = 0
   
+  scope :city, lambda { where(type: "locality") }
+  scope :township, lambda { where(type: "administrative_area_level_3") }
+  scope :county, lambda { where(type: "administrative_area_level_2") }
+  scope :state, lambda { where(type: "administrative_area_level_1") }
+  scope :short_or_long_name, lambda {|name| 
+    c = criteria
+    m = name.match(/(.+?)(?: (#{self.geocode_hints.values.map {|v| Regexp.escape(v)}.join('|')}))?$/i)
+    if m[2]
+      c = c.where(type: self.geocode_hints.invert[m[2]])
+    else
+      c = c.where(:type.in => self.valid_types - self.geocode_hints.keys)
+    end
+    c.or({short_name: /^#{m[1]}$/i}, {long_name: /^#{m[1]}$/i})
+  }
+    
   def incidents(incident_criteria = nil)
     criteria_within_boundary(criteria: incident_criteria, class: Incident)
   end
@@ -42,18 +51,25 @@ class Location
     Enumerator.new do |y|
       boundaries = self.boundary.crosses_anti_meridian? ? self.boundary.as_queryable : [self.boundary.as_queryable]
       boundaries.each do |sub_boundary|
-        c.within_box('geo_point.coordinates' => sub_boundary).each {|l| y << l}
+        c.clone.within_box('geo_point.coordinates' => sub_boundary).each {|l| y << l}
       end
     end
   end
   
+  # Note: Two location types (administrative_area_level_2 and administrative_area_level_1) are not directly
+  # accessible via this method; geolocate biases results towards localities, rather than toward counties and
+  # states. While for many locations this is not a problem, certain places (such as New York (City|State) or 
+  # Sacramento (City|County)) complicate what would otherwise be a simple algorithm. As such, counties and states
+  # do not pop up without some prodding: specifically, appending "county" or "state" to a placename component
+  # representative as such will add in a type search for that leveled entity. #geocode does this automatically,
+  # so any other code which calls #geolocate (probably only rake tasks) should append these words, as appropriate.
   def self.geolocate(placename)
     sanitized = sanitize_placename(placename)
     reverse_location_search(sanitized) || geocode(sanitized)
   end
   
   def self.reverse_location_search(placename)
-    names = placename.gsub(/county|state\b/i, '').split(/, ?/).map(&:strip).reverse
+    names = placename.split(/, ?/).map(&:strip).reverse
     location = self.short_or_long_name(names.shift).first
     until names.blank? || location.blank?
       location = location.sublocations(self.short_or_long_name(names.shift)).first
@@ -80,7 +96,9 @@ class Location
         location.build_boundary(geometry['bounds'])
         applicable_types = self.valid_types & address_components.map {|c| c['types']}.flatten - [response_type, 'administrative_area_level_3']
         unless applicable_types.blank?
-          placename = address_components.select {|c| (c['types'] & applicable_types).present?}.map {|c| c['long_name'] + self.geocode_hints[(c['types'] & self.valid_types).first].to_s}.join(', ')
+          placename = address_components.select {|c| (c['types'] & applicable_types).present?}.map do |c| 
+            (c['long_name'] + " " + self.geocode_hints[(c['types'] & self.valid_types).first].to_s).strip
+          end.join(', ')
           sleep 1.second
           geolocate(placename)
         end
