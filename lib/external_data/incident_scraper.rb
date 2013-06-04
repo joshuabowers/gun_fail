@@ -50,7 +50,7 @@ module ExternalData
       incidents.each do |i|
         begin
           info = i.content.match(/([^,]+, [^,]+)(?:, )?(?:\D+)?(\d{1,2}\/\d{1,2}\/\d{2,4}): (.*)/)
-          geolocation = Location.geolocate(info[1])
+          geolocation = Location.geolocate(info[1] + " state")
           time_of_day = info[3].match(/(\d{1,2})(?::?(\d{2}))? ([apAP]\.?[mM]\.?)/)
           occurred_at = Time.strptime(info[2], info[2] =~ /\/\d{2}$/ ? "%m/%d/%y" : "%m/%d/%Y").
             in_time_zone(geolocation.timezone).at_midnight +
@@ -63,9 +63,10 @@ module ExternalData
             source_url: i.css('a').first['href'],
             daily_kos_url: uri,
             gun_fail_series: gun_fail_series,
-            city: geolocation.city,
-            state: geolocation.state,
-            coordinates: geolocation.coordinates,
+            # city: geolocation.city,
+            # state: geolocation.state,
+            formatted_address: geolocation.formatted_address,
+            geo_point: geolocation.geo_point.clone,
             occurred_at: occurred_at,
             description: info[3]
           )

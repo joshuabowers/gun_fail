@@ -3,8 +3,9 @@ class Incident
   field :source_url, type: String
   field :daily_kos_url, type: String
   field :gun_fail_series, type: String
-  field :city, type: String
-  field :state, type: String
+  # field :city, type: String
+  # field :state, type: String
+  field :formatted_address, type: String
   field :occurred_at, type: ActiveSupport::TimeWithZone
   field :description, type: String
   
