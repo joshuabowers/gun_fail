@@ -63,15 +63,20 @@ module ExternalData
             source_url: i.css('a').first['href'],
             daily_kos_url: uri,
             gun_fail_series: gun_fail_series,
-            # city: geolocation.city,
-            # state: geolocation.state,
             formatted_address: geolocation.formatted_address,
             geo_point: geolocation.geo_point.clone,
             occurred_at: occurred_at,
-            description: info[3]
+            description: info[3],
+            status: :ok
           )
         rescue Exception => e
           Rails.logger.warn "\n!!!\n!!! Failed to process incident: \"#{i.content.truncate(30)}\": #{e}\n!!!\n"
+          Incident.create(
+            daily_kos_url: uri,
+            gun_fail_series: gun_fail_series,
+            description: i.to_s,
+            status: :failed
+          )
         ensure
           progress_updated
           sleep 0.01

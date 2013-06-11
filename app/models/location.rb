@@ -7,6 +7,7 @@ class Location
   field :formatted_address, type: String
   field :type, type: String
   field :timezone, type: String
+  field :parent_location_id, type: Moped::BSON::ObjectId
   
   embeds_one :geo_point
   embeds_one :boundary
@@ -101,7 +102,16 @@ class Location
             (c['long_name'] + " " + self.geocode_hints[(c['types'] & self.valid_types).first].to_s).strip
           end.join(', ')
           sleep 1.second
-          geolocate(placename)
+          # This needs to be slightly more robust: for example, a locatioin within Miami-Dade County will eventually
+          # bubble up to the county (administrative_area_level_2) level; currently, a geocoded search for
+          # "miami-dade county" tends to return, as first result, the locality of Miami, despite the "county" suffix.
+          # Interestingly, the result set does contain two elements: in addition to the locality entry, a secondary
+          # entry exists for the county itself. Therefore, the logical approach would be to alter #geocode to
+          # filter results based on an optional type parameter; if the parameter is present, it would dictate which
+          # types of records would be selected. Doing this, continuous search loops should be avoidable: if a result
+          # set does not return a result of the searched type, then raise an exception, thus breaking out of the recursion.
+          parent = geolocate(placename)
+          location.parent_location_id = parent.id
         end
         location.save!
       end

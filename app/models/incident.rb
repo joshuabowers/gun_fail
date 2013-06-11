@@ -3,15 +3,17 @@ class Incident
   field :source_url, type: String
   field :daily_kos_url, type: String
   field :gun_fail_series, type: String
-  # field :city, type: String
-  # field :state, type: String
   field :formatted_address, type: String
   field :occurred_at, type: ActiveSupport::TimeWithZone
   field :description, type: String
+  field :status, type: Symbol
   
   embeds_one :geo_point
   
   index({"geo_point.coordinates" => "2d"})
+  
+  scope :failed, lambda { where(status: :failed) }
+  scope :ok, lambda { where(status: :ok) }
   
   EARTH_RADIUS = 6371.0
   
