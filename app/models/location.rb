@@ -64,9 +64,9 @@ class Location
   # do not pop up without some prodding: specifically, appending "county" or "state" to a placename component
   # representative as such will add in a type search for that leveled entity. #geocode does this automatically,
   # so any other code which calls #geolocate (probably only rake tasks) should append these words, as appropriate.
-  def self.geolocate(placename)
+  def self.geolocate(placename, type = nil)
     sanitized = sanitize_placename(placename)
-    reverse_location_search(sanitized) || geocode(sanitized)
+    reverse_location_search(sanitized) || geocode(sanitized, type)
   end
   
   def self.reverse_location_search(placename)
@@ -78,11 +78,13 @@ class Location
     location
   end
   
-  def self.geocode(placename, administrative_area = nil)
-    response = lookup_placename(placename, administrative_area)
+  def self.geocode(placename, type = nil)
+    response = lookup_placename(placename)
     if response['status'] == "OK"
       self.accessed_webservice += 1
-      result = response['results'].select {|r| (r['types'] & self.valid_types).present?}.first
+      result = response['results'].select {|r| (r['types'] & self.valid_types).present?}.
+        reject {|r| type && !r['types'].member?(type)}.first
+      raise "Could not locate \"#{placename}\" of type \"#{type}\"" unless result
       response_type = (result['types'] & self.valid_types).first
       address_components = result['address_components'].select {|c| (self.valid_types & c['types']).present?}
       names = address_components.select {|c| c['types'].member?(response_type)}.first
@@ -101,16 +103,9 @@ class Location
           placename = address_components.select {|c| (c['types'] & applicable_types).present?}.map do |c| 
             (c['long_name'] + " " + self.geocode_hints[(c['types'] & self.valid_types).first].to_s).strip
           end.join(', ')
+          type = address_components.map {|c| c['types'] & applicable_types}.select {|c| c.present?}.first.first
           sleep 1.second
-          # This needs to be slightly more robust: for example, a locatioin within Miami-Dade County will eventually
-          # bubble up to the county (administrative_area_level_2) level; currently, a geocoded search for
-          # "miami-dade county" tends to return, as first result, the locality of Miami, despite the "county" suffix.
-          # Interestingly, the result set does contain two elements: in addition to the locality entry, a secondary
-          # entry exists for the county itself. Therefore, the logical approach would be to alter #geocode to
-          # filter results based on an optional type parameter; if the parameter is present, it would dictate which
-          # types of records would be selected. Doing this, continuous search loops should be avoidable: if a result
-          # set does not return a result of the searched type, then raise an exception, thus breaking out of the recursion.
-          parent = geolocate(placename)
+          parent = geolocate(placename, type)
           location.parent_location_id = parent.id
         end
         location.save!
@@ -119,11 +114,9 @@ class Location
       raise "Geocoding on \"#{placename}\" failed: #{response['status']}"
     end
   end
-  
-  def self.lookup_placename(placename, administrative_area = nil)
-    parameters = { address: placename, sensor: false }.
-      tap {|o| o[:administrative_area] = administrative_area unless administrative_area.blank? }.
-      map {|key, value| "#{key}=#{value}"}.join("&")
+    
+  def self.lookup_placename(placename)
+    parameters = { address: placename, sensor: false }.map {|key, value| "#{key}=#{value}"}.join("&")
     uri = URI.encode("https://maps.googleapis.com/maps/api/geocode/json?#{parameters}")
     JSON.parse(open(uri).read)
   end
