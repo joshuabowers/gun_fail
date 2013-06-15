@@ -2,11 +2,10 @@
 # All this logic will automatically be available in application.js.
 # You can use CoffeeScript in this file: http://jashkenas.github.com/coffee-script/
 
-map = null
 $ ->
   if $("meta[name='context']").attr("content") == "incidents"
     google.maps.visualRefresh = true
-    map = new google.maps.Map($('#map-canvas')[0], {
+    GunFail.map = new google.maps.Map($('#map-canvas')[0], {
       zoom: 8,
       mapTypeId: google.maps.MapTypeId.ROADMAP
       })
@@ -16,7 +15,7 @@ $ ->
     if navigator.geolocation
       navigator.geolocation.getCurrentPosition (position) ->
         pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
-        map.setCenter(pos)
+        GunFail.map.setCenter(pos)
         
     create_info_window = (incident, marker) ->
       info_window_content = $('.info-window.template').clone().removeClass('template')
@@ -35,9 +34,9 @@ $ ->
         info_window.close()
           
         
-    google.maps.event.addListener map, 'idle', ->
-      if map.getBounds()
-        sent_data = {bounds: map.getBounds().toUrlValue()}
+    google.maps.event.addListener GunFail.map, 'idle', ->
+      if GunFail.map.getBounds()
+        sent_data = {bounds: GunFail.map.getBounds().toUrlValue()}
         $("#debug-info").html("Zoom Level: #{map.getZoom()}")
         $.getJSON $("meta[name='incidents_path']").attr("content"), sent_data, (incidents) ->
           touched_marker_ids = []
@@ -46,7 +45,7 @@ $ ->
             unless visible_markers[incident._id]
               marker = new google.maps.Marker {
                 position: new google.maps.LatLng(incident.geo_point.coordinates.reverse()...),
-                map: map,
+                map: GunFail.map,
                 title: "#{incident.formatted_address}: #{incident.description.slice(0, 15)}..."
               }
               create_info_window incident, marker

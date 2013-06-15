@@ -25,7 +25,8 @@ end
 
 gem 'jquery-rails'
 gem 'haml-rails'
-gem 'underscore-rails'
+gem 'backbone-on-rails'
+# gem 'underscore-rails'
 
 gem 'nokogiri'
 

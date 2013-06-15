@@ -1,43 +1,10 @@
 - meta_tag(:incidents_path, incidents_path(format: :json))
-.info-window.template
-  .incident.window
-    = succeed ": " do
-      %span.formatted_address
-    %span.occurred_at
-    .description
+-# .info-window.template
+-#   .incident.window
+-#     = succeed ": " do
+-#       %span.formatted_address
+-#     %span.occurred_at
+-#     .description
 #map-canvas
 #debug-info
   Testing...
-
--# %h1 Listing incidents
--# 
--# %aside
--#   = page_entries_info @incidents
--#   = paginate @incidents
--# %table
--#   %tr
--#     %th Street
--#     %th City
--#     %th State
--#     %th Coordinates
--#     %th Occurred at
--#     %th Description
--#     %th
--#     %th
--#     %th
--# 
--#   - @incidents.each do |incident|
--#     %tr
--#       %td= incident.street
--#       %td= incident.city
--#       %td= incident.state
--#       %td= incident.coordinates
--#       %td= incident.occurred_at.in_time_zone(Location.where(city: incident.city, state: incident.state).first.timezone)
--#       %td= incident.description
--#       %td= link_to 'Show', incident
--#       %td= link_to 'Edit', edit_incident_path(incident)
--#       %td= link_to 'Destroy', incident, :method => :delete, :data => { :confirm => 'Are you sure?' }
--# 
--# %br
--# 
--# = link_to 'New Incident', new_incident_path

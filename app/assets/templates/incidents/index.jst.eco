@@ -1,0 +1,6 @@
+<div class="info-window">
+  <div class="incident window">
+    <span class="formatted_address"><%= @formatted_address %></span>: <span class="occurred_at"><%= @occurred_at %></span>
+    <p><%= @description %></p>
+  </div>
+</div>
