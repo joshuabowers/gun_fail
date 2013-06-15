@@ -1,8 +1,6 @@
 - meta_tag(:incidents_path, incidents_path(format: :json))
 .info-window.template
   .incident.window
-    -# = succeed ", " do
-    -#   %span.city
     = succeed ": " do
       %span.formatted_address
     %span.occurred_at
