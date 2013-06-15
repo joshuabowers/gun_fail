@@ -20,7 +20,7 @@ $ ->
         
     create_info_window = (incident, marker) ->
       info_window_content = $('.info-window.template').clone().removeClass('template')
-      for field in ["city", "state", "occurred_at", "description"]
+      for field in ["formatted_address", "occurred_at", "description"]
         info_window_content.find(".#{field}").html(incident[field])
       info_window = new google.maps.InfoWindow {content: info_window_content.html()}
       info_windows[incident._id] = false
@@ -45,9 +45,9 @@ $ ->
             touched_marker_ids.push(incident._id)
             unless visible_markers[incident._id]
               marker = new google.maps.Marker {
-                position: new google.maps.LatLng(incident.coordinates.reverse()...),
+                position: new google.maps.LatLng(incident.geo_point.coordinates.reverse()...),
                 map: map,
-                title: "#{incident.city}, #{incident.state}: #{incident.description.slice(0, 15)}..."
+                title: "#{incident.formatted_address}: #{incident.description.slice(0, 15)}..."
               }
               create_info_window incident, marker
               visible_markers[incident._id] = marker
