@@ -2,11 +2,15 @@ class IncidentsController < ApplicationController
   # GET /incidents
   # GET /incidents.json
   def index
-    @incidents = Incident.within_bounds(params[:bounds]).order_by(:occurred_at.asc)#.page(params[:page])
+    # @incidents = Incident.ok.within_bounds(params[:bounds]).order_by(:occurred_at.asc)#.page(params[:page])
 
     respond_to do |format|
       format.html # index.html.erb
-      format.json { render json: @incidents }
+      format.json do
+        @incidents = Incident.clustered(params[:bounds], params[:zoom_level])
+        render json: @incidents
+      end
+      # format.json { render json: @incidents }
     end
   end
 

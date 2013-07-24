@@ -4,6 +4,14 @@ class GeoPoint
   field :coordinates, type: Array, default: []
   embedded_in :locatable
   
+  def eql?(point_b)
+    self.coordinates <=> point_b.coordinates
+  end
+  
+  def hash
+    self.coordinates.hash
+  end
+  
   def latitude
     self.coordinates[1]
   end

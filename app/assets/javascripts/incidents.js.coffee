@@ -52,7 +52,7 @@ $ ->
               create_info_window incident, marker
               visible_markers[incident._id] = marker
           stale_markers = _.chain(visible_markers).keys().difference(touched_marker_ids).value()
-          for stale_marker in stale_markers
-            visible_markers[stale_marker].setMap(null)
-            delete visible_markers[stale_marker]
+          # for stale_marker in stale_markers
+          #   visible_markers[stale_marker].setMap(null)
+          #   delete visible_markers[stale_marker]
       
