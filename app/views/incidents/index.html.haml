@@ -3,8 +3,11 @@
   .incident.window
     = succeed ": " do
       %span.formatted_address
-    %span.occurred_at
-    .description
+    %dl
+.incident.template
+  %dt.occurred_at
+    %a{target: "_blank"}
+  %dd.description
 #map-canvas
 #debug-info
   Testing...

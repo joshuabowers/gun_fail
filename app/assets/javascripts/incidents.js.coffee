@@ -18,20 +18,26 @@ $ ->
         pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
         map.setCenter(pos)
         
-    create_info_window = (incident, marker) ->
+    create_info_window = (location, incidents, marker) ->
       info_window_content = $('.info-window.template').clone().removeClass('template')
-      for field in ["formatted_address", "occurred_at", "description"]
-        info_window_content.find(".#{field}").html(incident[field])
+      incident_template = $('.incident.template').clone().removeClass('template')
+      for field in ["formatted_address"]
+        info_window_content.find(".#{field}").html(incidents[0][field])
+      for incident in incidents
+        template = incident_template.clone()
+        template.find(".occurred_at a").html(incident["occurred_at"]).attr("href", incident["source_url"])
+        template.find(".description").html(incident["description"])
+        info_window_content.find("dl").append(template.children().unwrap())
       info_window = new google.maps.InfoWindow {content: info_window_content.html()}
-      info_windows[incident._id] = false
+      info_windows[location] = false
       google.maps.event.addListener marker, 'click', ->
-        info_windows[incident._id] = !info_windows[incident._id]
-        unless info_windows[incident._id]
+        info_windows[location] = !info_windows[location]
+        unless info_windows[location]
           info_window.close()
         else
           info_window.open(map, marker)
       google.maps.event.addListener map, 'click', ->
-        info_windows[incident._id] = false
+        info_windows[location] = false
         info_window.close()
           
         
@@ -39,19 +45,19 @@ $ ->
       if map.getBounds()
         sent_data = {bounds: map.getBounds().toUrlValue()}
         $("#debug-info").html("Zoom Level: #{map.getZoom()}")
-        $.getJSON $("meta[name='incidents_path']").attr("content"), sent_data, (incidents) ->
-          touched_marker_ids = []
-          for incident in incidents
-            touched_marker_ids.push(incident._id)
-            unless visible_markers[incident._id]
+        $.getJSON $("meta[name='incidents_path']").attr("content"), sent_data, (clustered) ->
+          touched_marker_coords = []
+          for location, incidents of clustered
+            touched_marker_coords.push(location)
+            unless visible_markers[location]
               marker = new google.maps.Marker {
-                position: new google.maps.LatLng(incident.geo_point.coordinates.reverse()...),
+                position: new google.maps.LatLng(eval(location).reverse()...),
                 map: map,
-                title: "#{incident.formatted_address}: #{incident.description.slice(0, 15)}..."
+                title: "Total incidents: #{incidents.length}"
               }
-              create_info_window incident, marker
-              visible_markers[incident._id] = marker
-          stale_markers = _.chain(visible_markers).keys().difference(touched_marker_ids).value()
+              create_info_window location, incidents, marker
+              visible_markers[location] = marker
+          # stale_markers = _.chain(visible_markers).keys().difference(touched_marker_ids).value()
           # for stale_marker in stale_markers
           #   visible_markers[stale_marker].setMap(null)
           #   delete visible_markers[stale_marker]

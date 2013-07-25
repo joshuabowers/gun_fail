@@ -9,11 +9,18 @@
 .info-window.template
   display: none
 .incident.window
+  dl
+    max-height: 20em
+    overflow: scroll
   .formatted_address
     font-weight: bold
   .occurred_at
     font-size: smaller
-    font-style: italic
+    a
+      color: blue
+      font-style: none
+      &:hover
+        font-style: italic
 #debug-info
   position: fixed
   bottom: 1em
