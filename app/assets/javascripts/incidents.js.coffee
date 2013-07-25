@@ -17,6 +17,9 @@ $ ->
       navigator.geolocation.getCurrentPosition (position) ->
         pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
         map.setCenter(pos)
+    else
+      # Google Maps geocoded center for the United States.
+      map.setCenter(new google.maps.LatLng(37.09024, -95.712891))
         
     create_info_window = (location, incidents, marker) ->
       info_window_content = $('.info-window.template').clone().removeClass('template')
