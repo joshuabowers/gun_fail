@@ -3,6 +3,8 @@
   .incident.window
     = succeed ": " do
       %span.formatted_address
+    = succeed " incidents" do
+      %span.number_of_incidents
     %dl
 .incident.template
   %dt.occurred_at

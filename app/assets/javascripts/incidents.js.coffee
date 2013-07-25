@@ -38,6 +38,7 @@ $ ->
       incident_template = $('.incident.template').clone().removeClass('template')
       for field in ["formatted_address"]
         info_window_content.find(".#{field}").html(incidents[0][field])
+      info_window_content.find(".number_of_incidents").html(incidents.length)
       for incident in incidents
         template = incident_template.clone()
         template.find(".occurred_at a").html(incident["occurred_at"]).attr("href", incident["source_url"])
