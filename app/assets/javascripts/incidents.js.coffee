@@ -12,6 +12,11 @@ $ ->
       })
     visible_markers = {}
     info_windows = {}
+    heatmap_data = new google.maps.MVCArray([])
+    heatmap = new google.maps.visualization.HeatmapLayer({
+      data: heatmap_data,
+      radius: 35
+    })
       
     if navigator.geolocation
       navigator.geolocation.getCurrentPosition (position) ->
@@ -20,6 +25,13 @@ $ ->
     else
       # Google Maps geocoded center for the United States.
       map.setCenter(new google.maps.LatLng(37.09024, -95.712891))
+      
+    $("#markers-layer-toggle").change ->
+      bound_map = if $("#markers-layer-toggle").prop("checked") then map else null
+      _.each(visible_markers, (marker) -> marker.setMap(bound_map))
+    $("#heatmap-layer-toggle").change ->
+      bound_map = if $("#heatmap-layer-toggle").prop("checked") then map else null
+      heatmap.setMap(bound_map)
         
     create_info_window = (location, incidents, marker) ->
       info_window_content = $('.info-window.template').clone().removeClass('template')
@@ -47,15 +59,16 @@ $ ->
     google.maps.event.addListener map, 'idle', ->
       if map.getBounds()
         sent_data = {bounds: map.getBounds().toUrlValue()}
-        $("#debug-info").html("Zoom Level: #{map.getZoom()}")
+        $("#debug-info .zoom-level").html("Zoom Level: #{map.getZoom()}")
         $.getJSON $("meta[name='incidents_path']").attr("content"), sent_data, (clustered) ->
           touched_marker_coords = []
           for location, incidents of clustered
             touched_marker_coords.push(location)
             unless visible_markers[location]
+              heatmap_data.push({location: new google.maps.LatLng(eval(location).reverse()...), weight: incidents.length})
               marker = new google.maps.Marker {
                 position: new google.maps.LatLng(eval(location).reverse()...),
-                map: map,
+                map: if $("#markers-layer-toggle").prop("checked") then map else null,
                 title: "Total incidents: #{incidents.length}"
               }
               create_info_window location, incidents, marker

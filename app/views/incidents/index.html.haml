@@ -10,7 +10,14 @@
   %dd.description
 #map-canvas
 #debug-info
-  Testing...
+  .toggles
+    %label
+      %input{type: "checkbox", id: "markers-layer-toggle", checked: true}
+      Markers
+    %label
+      %input{type: "checkbox", id: "heatmap-layer-toggle", checked: false}
+      Heatmap
+  .zoom-level
 
 -# %h1 Listing incidents
 -# 
