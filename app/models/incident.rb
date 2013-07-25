@@ -24,6 +24,9 @@ class Incident
   
   scope :within_bounds, lambda {|bounds| bounds.blank? ? criteria : within_box("geo_point.coordinates" => bounds.split(',').map(&:to_f).each_slice(2).map(&:reverse))}
   
+  # Potential optimization, which will affect the javascript rendering for clusters: rather than return all results
+  # within the boundaries, return a smaller subset, paginated, then clustered. The javascript can then start sending
+  # multiple requests for the paginated data, potentially allowing for faster map refreshes between data additions.
   def self.clustered(bounds, zoom_level)
     self.ok.within_bounds(bounds).order_by(:occurred_at.asc).group_by {|i| i.geo_point.coordinates}
   end

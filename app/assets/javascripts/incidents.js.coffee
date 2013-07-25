@@ -8,6 +8,7 @@ $ ->
     google.maps.visualRefresh = true
     map = new google.maps.Map($('#map-canvas')[0], {
       zoom: 8,
+      disableDefaultUI: true,
       mapTypeId: google.maps.MapTypeId.ROADMAP
       })
     visible_markers = {}
