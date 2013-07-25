@@ -18,14 +18,15 @@ $ ->
       data: heatmap_data,
       radius: 35
     })
+    united_states = new google.maps.LatLng(37.09024, -95.712891)
       
     if navigator.geolocation
-      navigator.geolocation.getCurrentPosition (position) ->
+      navigator.geolocation.getCurrentPosition ((position) ->
         pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
-        map.setCenter(pos)
+        map.setCenter(pos)), ((error) -> map.setCenter(united_states))
     else
       # Google Maps geocoded center for the United States.
-      map.setCenter(new google.maps.LatLng(37.09024, -95.712891))
+      map.setCenter(united_states)
       
     $("#markers-layer-toggle").change ->
       bound_map = if $("#markers-layer-toggle").prop("checked") then map else null
@@ -63,9 +64,9 @@ $ ->
         sent_data = {bounds: map.getBounds().toUrlValue()}
         $("#debug-info .zoom-level").html("Zoom Level: #{map.getZoom()}")
         $.getJSON $("meta[name='incidents_path']").attr("content"), sent_data, (clustered) ->
-          touched_marker_coords = []
-          for location, incidents of clustered
-            touched_marker_coords.push(location)
+          new_locations = _.chain(clustered).keys().difference(_.keys(visible_markers)).value()
+          for location in new_locations
+            incidents = clustered[location]
             unless visible_markers[location]
               heatmap_data.push({location: new google.maps.LatLng(eval(location).reverse()...), weight: incidents.length})
               marker = new google.maps.Marker {
