@@ -38,6 +38,7 @@ class Location
     end
     c.or({short_name: /^#{m[1]}$/i}, {long_name: /^#{m[1]}$/i})
   }
+  scope :within_bounds, lambda {|bounds| bounds.blank? ? criteria : within_box("geo_point.coordinates" => bounds.split(',').map(&:to_f).each_slice(2).map(&:reverse))}
     
   def incidents(incident_criteria = nil)
     criteria_within_boundary(criteria: incident_criteria, class: Incident)
@@ -58,7 +59,13 @@ class Location
   end
   
   def self.clustered(bounds, zoom_level)
-    
+    if zoom_level.to_i < 8
+      Hash[*Location.county.within_bounds(bounds).map do |l|
+        [l.geo_point.coordinates, l.incidents(Incident.ok.order_by(:formatted_address.asc, :occurred_at.asc))]
+      end.flatten(1)]
+    else
+      Incident.clustered(bounds, zoom_level)
+    end
   end
   
   # Note: Two location types (administrative_area_level_2 and administrative_area_level_1) are not directly

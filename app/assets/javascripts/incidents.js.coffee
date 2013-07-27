@@ -7,7 +7,7 @@ $ ->
   if $("meta[name='context']").attr("content") == "incidents"
     google.maps.visualRefresh = true
     map = new google.maps.Map($('#map-canvas')[0], {
-      zoom: 8,
+      zoom: 5,
       disableDefaultUI: true,
       mapTypeId: google.maps.MapTypeId.ROADMAP
       })
@@ -61,12 +61,13 @@ $ ->
         
     google.maps.event.addListener map, 'idle', ->
       if map.getBounds()
-        sent_data = {bounds: map.getBounds().toUrlValue()}
+        sent_data = {bounds: map.getBounds().toUrlValue(), zoom_level: map.getZoom()}
         $("#debug-info .zoom-level").html("Zoom Level: #{map.getZoom()}")
         $.getJSON $("meta[name='incidents_path']").attr("content"), sent_data, (clustered) ->
-          new_locations = _.chain(clustered).keys().difference(_.keys(visible_markers)).value()
-          for location in new_locations
-            incidents = clustered[location]
+          # new_locations = _.chain(clustered).keys().difference(_.keys(visible_markers)).value()
+          # for location in new_locations
+            # incidents = clustered[location]
+          for location, incidents of clustered
             unless visible_markers[location]
               heatmap_data.push({location: new google.maps.LatLng(eval(location).reverse()...), weight: incidents.length})
               marker = new google.maps.Marker {

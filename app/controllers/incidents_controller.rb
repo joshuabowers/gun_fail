@@ -7,7 +7,7 @@ class IncidentsController < ApplicationController
     respond_to do |format|
       format.html # index.html.erb
       format.json do
-        @incidents = Incident.clustered(params[:bounds], params[:zoom_level])
+        @incidents = Location.clustered(params[:bounds], params[:zoom_level])
         render json: @incidents
       end
       # format.json { render json: @incidents }
